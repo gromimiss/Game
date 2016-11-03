@@ -1,0 +1,233 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>推箱子</title>
+<style>
+*{ margin:0; padding:0;}
+#container{ position:relative; margin:20px auto;}
+
+.pos1{ width:50px; height:50px; background:#666; float:left;}
+.pos2{ width:50px; height:50px; background:url(img/wall.png) no-repeat; float:left;}
+.pos3{ width:50px; height:50px; background:red; float:left;}
+.pos0{ width:50px; height:50px; background:blue; float:left;}
+
+.box{ width:50px; height:50px; background:url(img/box.png) no-repeat; position:absolute;}
+.person{ width:50px; height:50px; background:url(img/person.png) no-repeat; position:absolute;}
+</style>
+<script src="jquery-1.9.1.min.js"></script>
+<script>
+$(document).ready(function(e) {
+    Game.init($('#container'));
+});
+
+var Game={
+	gk   : [//关卡的数据
+	 {
+			map : [//地图的布局
+				1,1,2,2,2,2,1,1,
+				1,1,2,3,3,2,1,1,
+				1,2,2,0,3,2,2,1,
+				1,2,0,0,0,3,2,1,
+				2,2,0,0,0,0,2,2,
+				2,0,0,2,0,0,0,2,
+				2,0,0,0,0,0,0,2,
+				2,2,2,2,2,2,2,2
+			],
+			box : [//箱子的坐标
+				{x:4,y:3},
+				{x:3,y:4},
+				{x:4,y:5},
+				{x:5,y:5}
+			],
+			person : {x:3,y:6}//人物的坐标
+		},
+		{
+			map : [
+				1,1,1,1,2,2,2,2,2,2,2,1,
+				1,1,1,1,2,0,0,2,0,0,2,1,
+				1,1,1,1,2,0,0,0,0,0,2,1,
+				2,2,2,2,2,0,0,2,0,0,2,1,
+				3,3,3,2,2,2,0,2,0,0,2,2,
+				3,0,0,2,0,0,0,0,2,0,0,2,
+				3,0,0,0,0,0,0,0,0,0,0,2,
+				3,0,0,2,0,0,0,0,2,0,0,2,
+				3,3,3,2,2,2,0,2,0,0,2,2,
+				2,2,2,2,2,0,0,0,0,0,2,1,
+				1,1,1,1,2,0,0,2,0,0,2,1,
+				1,1,1,1,2,2,2,2,2,2,2,1
+			],
+			box : [
+				{x : 5 , y : 6},
+				{x : 6 , y : 3},
+				{x : 6 , y : 5},
+				{x : 6 , y : 7},
+				{x : 6 , y : 9},
+				{x : 7 , y : 2},
+				{x : 8 , y : 2},
+				{x : 9 , y : 6},
+			],
+			person : { x : 5 , y : 9 }
+		}
+	],
+	init : function(oParent){//初始化
+	   this.oParent=oParent;
+	   this.createMap(0);
+		},
+	createMap : function(iNow){//iNow代表第几关
+	this.oParent.empty();//清空原来的容器
+	document.title='第'+(iNow+1)+'关';
+	    //获取当前关卡信息
+		this.nowJson=this.gk[iNow];
+		
+		//将容器设置为地图的大小
+		this.oParent.css('width',Math.sqrt(this.gk[iNow].map.length)*50);
+		
+		//遍历关卡中的地图，创建地图
+		//$.proxy()可改变this指向，在事件和each遍历中都需要改变其指向，使其指向game
+		$.each(this.nowJson.map,$.proxy(function(i,elem){
+			this.oParent.append('<div class="pos'+ elem +'"></div>');
+			},this));
+		this.createBox();
+		this.createPerson();
+		},
+	createBox : function(){//创建箱子
+		$.each(this.nowJson.box,$.proxy(function(i,elem){
+			var oBox=$('<div class="box"></div>');
+			oBox.css({
+				left : elem.x*50,
+				top  : elem.y*50
+				
+				});
+			this.oParent.append(oBox);
+			
+			},this));
+		},
+	createPerson : function(){//创建人物
+	    var oPerson=$('<div class="person"></div>');
+		oPerson.css({
+			left : this.nowJson.person.x*50,
+			top  : this.nowJson.person.y*50
+			})
+			//将人物的坐标存入
+		oPerson.data('x',this.nowJson.person.x);
+		oPerson.data('y',this.nowJson.person.y);
+		this.oParent.append(oPerson);
+		this.bindPerson(oPerson);
+		},
+	bindPerson : function(oP){//人物的操作
+	    $(document).keydown($.proxy(function(ev){
+			  switch(ev.which){
+				  case 37://←
+				  oP.css('backgroundPosition','-150px 0');
+				  this.movePerson(oP,{x:-1});
+				  break;
+				  case 38://↑
+				  oP.css('backgroundPosition','0 0');
+				  this.movePerson(oP,{y:-1});
+				  break;
+				  case 39://右
+				  oP.css('backgroundPosition','-50px 0');
+				  this.movePerson(oP,{x:1});
+				  break;
+				  case 40://↓
+				  oP.css('backgroundPosition','-100px 0');
+				  this.movePerson(oP,{y:1});
+				  break;
+			  }
+			},this))
+		},
+	movePerson : function(oPerson,opt){//人物移动方法
+		var stepX=opt.x||0;
+		var stepY=opt.y||0;
+		//若人物的下一步不是墙，则人物就会移动
+		//人物在地图中的位置是地图数组中的第几个=人物的y轴*地图的列数+人物的x轴
+		if(this.nowJson.map[(oPerson.data('y')+stepY)*Math.sqrt(this.nowJson.map.length)+oPerson.data('x')+stepX]!=2){
+			//若人物中地图的位置不是2了的话就把人物往相应方向移动移步，存好坐标
+			oPerson.data('y',oPerson.data('y')+stepY);
+			oPerson.data('x',oPerson.data('x')+stepX);
+			oPerson.css('left',oPerson.data('x')*50);
+			oPerson.css('top',oPerson.data('y')*50);
+			
+		}
+		
+		//each中的elem是一个dom对象，而不是jquery对象
+		$('.box').each($.proxy(function(i,elem){
+			//第一种情况，此时人物由于前方不是墙而是箱子，已经移动到了箱子的位置，需要判断箱子的位置的下一步是不是墙，若不是墙则箱子前进一步
+			//如果发生碰撞并且下一步的位置并不是墙所在的位置，则移动箱子移动人物并将人物新的坐标存入数据中
+			if(this.testCrush(oPerson,$(elem))&&this.nowJson.map[(oPerson.data('y')+stepY)*Math.sqrt(this.nowJson.map.length)+oPerson.data('x')+stepX]!=2){
+				//不能直接用箱子的坐标，因为箱子原来写的坐标是固定的，移动时只会在原来的坐标上加
+				$(elem).css({
+					left : (oPerson.data('x')+stepX)*50,
+					top  : (oPerson.data('y')+stepY)*50
+					})
+					
+				$('.box').each($.proxy(function(j,elem2){
+					//第二种情况，箱子的下一步是其他箱子，此时，人物其实已经移动到了下一步，所以推动的箱子应该还是在原来的位置，也就是人物新移动到的地方，而人物则要后退一步，回到之前的位置
+					//若当前的箱子碰撞到其他箱子，并且不是正在推的箱子，则箱子返回到人物的位置上，而人物要再后退一步，一切归于原位
+				   if(this.testCrush( $(elem) , $(elem2))&&elem!=elem2){
+					 $(elem).css({
+					left : oPerson.data('x')*50,
+					top  : oPerson.data('y')*50
+					})
+					oPerson.data('y',oPerson.data('y')-stepY);
+			        oPerson.data('x',oPerson.data('x')-stepX);
+			        oPerson.css('left',oPerson.data('x')*50);
+			        oPerson.css('top',oPerson.data('y')*50);   
+				}		
+				
+				},this));
+				//第三种情况，人物和箱子碰撞了，但是箱子的位置的下一步是墙，则人物和箱子都不应该移动，但由于遍历外的if语句，人物已经移动了，所以人物要再后退一步
+				//当人物和箱子碰撞，但是有墙则不能移动
+				}else if( this.testCrush( oPerson , $(elem) ) ){
+					
+					oPerson.data('x',oPerson.data('x') - stepX );
+					oPerson.data('y',oPerson.data('y') - stepY );
+					
+					oPerson.css('left' , oPerson.data('x')*50 );
+					oPerson.css('top' , oPerson.data('y')*50 );
+					
+				}
+			},this));
+			this.nextShow();
+		},
+	
+	nextShow : function(){
+		var iNum=0;
+		//若箱子和红色区域碰撞，碰撞一次加iNum+1，直到箱子和红色区域完全重合，就进入下一关
+		$('.box').each($.proxy(function(i,elem){
+			   $('.pos3').each($.proxy(function(j,elem2){
+			       if(this.testCrush($(elem),$(elem2))){
+					   iNum++;
+				   }
+			},this));
+			},this));
+			if(iNum==this.nowJson.box.length){
+				this.createMap(1);
+			}
+		},
+	testCrush : function(obj1,obj2){//碰撞检测
+		var L1 = obj1.offset().left;
+		var R1 = obj1.offset().left + obj1.width();
+		var T1 = obj1.offset().top;
+		var B1 = obj1.offset().top + obj1.height();
+		
+		var L2 = obj2.offset().left;
+		var R2 = obj2.offset().left + obj2.width();
+		var T2 = obj2.offset().top;
+		var B2 = obj2.offset().top + obj2.height();
+		//满足一下其中一个条件则不会碰撞
+		if(R2<=L1||L2>=R1||T2>=B1||B2<=T1){
+			return false;
+		}else{
+			return true;
+		}
+		},
+	}
+</script>
+</head>
+
+<body>
+<div id="container"></div>
+</body>
+</html>
